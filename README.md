@@ -81,7 +81,7 @@ Random seeds are set (`set.seed(123)`) before every simulation and permutation s
 Analyses were run in R 4.4.3 (R Core Team 2025) on [operating system].
 
 | Package | Used for |
-|---|---|---|
+|---|---|
 | tidyverse (dplyr, tidyr, ggplot2, purrr, tibble) | Data handling and plotting |
 | lubridate | Dates |
 | glmmTMB | [x.y.z] | Mixed models |
@@ -95,11 +95,9 @@ Analyses were run in R 4.4.3 (R Core Team 2025) on [operating system].
 | ggdist | Half-eye plots (Fig. 2D) |
 | scales | Axis labels |
 
-To reproduce: open R in the repository root, install the packages above, and run `source("R/Hartmann_BioLetters_analysis_figures.R")`. The permutation and simulation steps take a few minutes.
+To reproduce: open R, install the packages above, and run Hartmann_BioLetters_analysis_figures.R. The permutation and simulation steps take a few minutes.
 
 ## Licence and access
-
-The data (`data/`) are released under the Creative Commons Attribution 4.0 International licence (CC BY 4.0; see `LICENSE-data.md`). The code (`R/`) is released under the MIT licence (see `LICENSE`). There are no restrictions on access. Please cite the article and this dataset (see `CITATION.cff`) when reusing them.
 
 ## References
 
