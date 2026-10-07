@@ -47,18 +47,25 @@ There are no missing values. Zeros in the two load columns mean the pathogen was
 
 ### Species codes (`species`)
 
-| Code | Species | n | Code | Species | n |
-|---|---|---|---|---|---|
-| ACGR | *Acris gryllus* | 470 | LICA | *Lithobates catesbeianus* | 112 |
-| ANQU | *Anaxyrus quercicus* | 1 | LICP | *Lithobates capito* | 208 |
-| ANTE | *Anaxyrus terrestris* | 9 | LIGR | *Lithobates grylio* | 27 |
-| EUPL | *Eleutherodactylus planirostris* | 3 | LISP | *Lithobates sphenocephalus* | 167 |
-| EUQU | *Eurycea quadridigitata* | 13 | NOPE | *Notophthalmus perstriatus* | 817 |
-| GACA | *Gastrophryne carolinensis* | 3 | PSOC | *Pseudacris ocularis* | 7 |
-| HYCI | *Dryophytes cinereus* | 5 | SCHO | *Scaphiopus holbrookii* | 3 |
-| HYFE | *Dryophytes femoralis* | 110 | | | |
-| HYGR | *Dryophytes gratiosus* | 162 | | | |
-| HYSQ | *Dryophytes squirellus* | 2 | | | |
+| Code | Species | n |
+|---|---|---|
+| ACGR | *Acris gryllus* | 470 |
+| ANQU | *Anaxyrus quercicus* | 1 |
+| ANTE | *Anaxyrus terrestris* | 9 | 
+| EUPL | *Eleutherodactylus planirostris* | 3 | 
+| EUQU | *Eurycea quadridigitata* | 13 | 
+| GACA | *Gastrophryne carolinensis* | 3 | 
+| HYCI | *Dryophytes cinereus* | 5 | 
+| HYFE | *Dryophytes femoralis* | 110 | 
+| HYGR | *Dryophytes gratiosus* | 162 | 
+| HYSQ | *Dryophytes squirellus* | 2 | 
+| LICA | *Lithobates catesbeianus* | 112 |
+| LICP | *Lithobates capito* | 208 |
+| LIGR | *Lithobates grylio* | 27 |
+| LISP | *Lithobates sphenocephalus* | 167 |
+| NOPE | *Notophthalmus perstriatus* | 817 |
+| PSOC | *Pseudacris ocularis* | 7 |
+| SCHO | *Scaphiopus holbrookii* | 3 |
 
 Abbreviations: Bd, *Batrachochytrium dendrobatidis*; Rv, ranavirus; ITS, internal transcribed spacer (Bd rDNA target); ge, genome equivalents; qPCR, quantitative PCR; OSBS, Ordway-Swisher Biological Station.
 
