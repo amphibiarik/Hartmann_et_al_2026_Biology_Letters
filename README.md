@@ -15,9 +15,6 @@ Data and R code supporting the article "Environment and host specificity shape t
 | `Hartmann_BL_data_clean.csv` | Comma-separated values (UTF-8, one header row, 2,119 rows x 15 columns) | One row per sampled amphibian: survey date and wetland, 7-day weather summaries, host species and metamorphic stage, and mean qPCR estimates and status for *Batrachochytrium dendrobatidis* (Bd) and ranavirus (Rv). |
 | `Hartmann_BioLetters_analysis_figures.R` | R script (plain text) | Reproduces every analysis, table and figure in the article and its electronic supplementary material. |
 | `README.md` | Markdown | This description of the data and code. |
-| `LICENSE` | Plain text | MIT licence for the code. |
-| `LICENSE-data.md` | Markdown | CC BY 4.0 licence for the data. |
-| `CITATION.cff`, `.zenodo.json` | YAML, JSON | Citation metadata read by GitHub and Zenodo. |
 
 ## How the data were collected
 
