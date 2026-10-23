@@ -1,6 +1,6 @@
 # ============================================================
 # Hartmann et al. submitted to Biology Letters
-# Bd and Ranavirus co-emergence dynamics
+# Bd and Ranavirus co-emergence dynamics in amphibian communities
 
 #  1. Data preparation
 #  2. Summary statistics (Table S1)
@@ -24,6 +24,7 @@ library(patchwork)
 
 # Functions called with :: so they do not mask dplyr: MASS (mvrnorm), ggdist (stat_halfeye)
 
+
 # 1. Data preparation ----
 # Variables used: date, pond_ID, avg_temp_C, precip_avg, species, ID, metam_stage,
 # bd_its (Bd load) mean from duplicate qPCR runs, rv_ge (Rv load) mean from duplicate qPCR runs
@@ -39,7 +40,7 @@ d_raw <- read.csv("Hartmann_BL_data_clean.csv") %>%
   # Unique IDs = species code + swab series (duplicates get a suffix)
   group_by(species, ID) %>%
   mutate(individual_ID = if (n() > 1) paste(species, ID, row_number(), sep = "_")
-                         else paste(species, ID, sep = "_")) %>%
+         else paste(species, ID, sep = "_")) %>%
   ungroup()
 
 d_raw
@@ -175,6 +176,107 @@ pairs(emmeans(rvL_final, ~ species), adjust = "tukey")  # LICP and NOPE
 pairs(emmeans(bdL_final, ~ stage))  # post-metamorphic higher
 pairs(emmeans(rvL_final, ~ stage))  # NS
 
+# Post hoc tables (raw CSVs + formatted Table S2) ----
+# All species and stage pairs() from sections 3-4. Prevalence contrasts are odds ratios;
+# load contrasts are differences in log10 load. Species CIs are Tukey-adjusted, like the p-values.
+# HYFE was never Bd+, so its Bd prevalence contrasts are not estimable (complete separation):
+# they stay in the raw CSVs with separation = TRUE and are shown as "n.e." in Table S2.
+posthoc <- list(
+  bd_prev_species = pairs(emm_bd_species, adjust = "tukey"),
+  rv_prev_species = pairs(emm_rv_species, adjust = "tukey"),
+  bd_prev_stage   = pairs(emm_bd_stage),
+  rv_prev_stage   = pairs(emm_rv_stage),
+  bd_load_species = pairs(emmeans(bdL_final, ~ species), adjust = "tukey"),
+  rv_load_species = pairs(emmeans(rvL_final, ~ species), adjust = "tukey"),
+  bd_load_stage   = pairs(emmeans(bdL_final, ~ stage)),
+  rv_load_stage   = pairs(emmeans(rvL_final, ~ stage)))
+
+# One tidy tibble per table, with the same column names whatever the model family
+tidy_pairs <- function(x) {
+  summary(x, infer = TRUE) %>% as.data.frame() %>% as_tibble() %>%
+    rename_with(~ case_when(.x %in% c("odds.ratio", "ratio", "estimate") ~ "estimate",
+                            .x %in% c("asymp.LCL", "lower.CL") ~ "lower",
+                            .x %in% c("asymp.UCL", "upper.CL") ~ "upper",
+                            .x %in% c("z.ratio", "t.ratio") ~ "statistic",
+                            TRUE ~ .x)) %>%
+    mutate(contrast = as.character(contrast))
+}
+
+posthoc_raw <- map(posthoc, tidy_pairs) %>%
+  imap(~ mutate(.x, separation = str_starts(.y, "bd_prev") & str_detect(contrast, "HYFE")))
+
+posthoc_all <- bind_rows(posthoc_raw, .id = "table") %>%
+  separate_wider_delim(table, "_", names = c("pathogen", "response", "term")) %>%
+  mutate(pathogen = str_to_title(pathogen),
+         response = if_else(response == "prev", "Infection probability", "log10 load"),
+         term = str_to_title(term))
+posthoc_all %>% print(n = Inf)
+
+#Uncomment below to save one raw CSV per post hoc table (plus all tables stacked)
+#iwalk(posthoc_raw, ~ write.csv(.x, paste0("posthoc_", .y, ".csv"), row.names = FALSE))
+#write.csv(posthoc_all, "posthoc_all_raw.csv", row.names = FALSE)
+
+# Tables S2-S9: one formatted table per post hoc, for the supplement (species names as in Table S1)
+species_names <- c(ACGR = "Acris gryllus", HYFE = "Dryophytes femoralis", HYGR = "Dryophytes gratiosus",
+                   LICA = "Lithobates catesbeianus", LICP = "Lithobates capito",
+                   LISP = "Lithobates sphenocephalus", NOPE = "Notophthalmus perstriatus")
+fmt_p <- function(p) if_else(p < 0.001, "<0.001", sprintf("%.3f", p))
+
+posthoc_info <- tibble(
+  table = names(posthoc),
+  number = paste0("S", seq_along(posthoc) + 1),
+  caption = c("Pairwise comparisons of Bd infection probability among species.",
+              "Pairwise comparisons of Rv infection probability among species.",
+              "Comparison of Bd infection probability between post- and pre-metamorphic individuals.",
+              "Comparison of Rv infection probability between post- and pre-metamorphic individuals.",
+              "Pairwise comparisons of Bd load among species (Bd-positive individuals).",
+              "Pairwise comparisons of Rv load among species (Rv-positive individuals).",
+              "Comparison of Bd load between post- and pre-metamorphic individuals (Bd-positive individuals).",
+              "Comparison of Rv load between post- and pre-metamorphic individuals (Rv-positive individuals)."),
+  footnote = case_when(
+    str_detect(table, "prev") ~ "Odds ratios from the binomial GLMM, on the response scale; z tests.",
+    TRUE ~ "Differences in log10(load + 1) from the Gaussian GLMM; t tests.") %>%
+    paste(if_else(str_detect(table, "species"), "P-values and 95% CIs are Tukey-adjusted.", "")) %>%
+    paste(if_else(table == "bd_prev_species",
+                  "n.e. = not estimable: D. femoralis was never Bd positive (complete separation).", "")) %>%
+    str_squish())
+
+fmt_posthoc <- function(x, table) {
+  prev <- str_detect(table, "prev")
+  x %>%
+    mutate(Contrast = str_replace_all(contrast, species_names) %>% str_replace_all(" [/-] ", " vs. "),
+           est = if_else(separation, "n.e.",
+                         sprintf(if (prev) "%.2f (%.2f–%.2f)" else "%.2f (%.2f to %.2f)", estimate, lower, upper)),
+           stat = if_else(separation, "–", sprintf("%.2f", statistic)),
+           p = if_else(separation, "–", fmt_p(p.value))) %>%
+    select(Contrast, est, stat, p) %>%
+    set_names(c("Contrast", if (prev) c("Odds ratio (95% CI)", "z") else c("Difference (95% CI)", "t"), "p"))
+}
+
+posthoc_fmt <- imap(posthoc_raw, fmt_posthoc)
+posthoc_fmt
+
+#Uncomment below to save Tables S2-S9 as one CSV each and as one Word file (.docx; needs flextable and officer)
+pwalk(posthoc_info, function(table, number, ...)
+  write.csv(posthoc_fmt[[table]], paste0("Table_", number, "_", table, ".csv"), row.names = FALSE, fileEncoding = "UTF-8"))
+posthoc_ft <- function(x, footnote) {
+  flextable::flextable(x) %>%
+    flextable::bold(part = "header") %>%
+    flextable::add_footer_lines(footnote) %>%
+    flextable::font(fontname = "Times New Roman", part = "all") %>%
+    flextable::fontsize(size = 10, part = "all") %>%
+    flextable::padding(padding.top = 1, padding.bottom = 1, part = "all") %>%
+    flextable::width(width = c(3.4, 1.7, 0.6, 0.7))  # inches; fits a 6.5 in text width
+}
+posthoc_docx <- officer::read_docx()
+for (i in seq_len(nrow(posthoc_info))) {
+  posthoc_docx <- posthoc_docx %>%
+    officer::body_add_par(paste0("Table ", posthoc_info$number[i], ". ", posthoc_info$caption[i])) %>%
+    flextable::body_add_flextable(posthoc_ft(posthoc_fmt[[posthoc_info$table[i]]], posthoc_info$footnote[i])) %>%
+    officer::body_add_par("")
+}
+print(posthoc_docx, target = "Tables_S2-S9_posthoc.docx")
+
 # 5. Seasonal timing and strength ----
 # Joint binomial GLMM of Bd and Rv infection with pathogen-specific annual harmonics
 # (sin/cos of day-of-year); LRT vs. one shared cycle; peak dates, lag and amplitude
@@ -198,7 +300,7 @@ async_dat <- prev_base %>%
 # (1 | individual_ID) had ~0 variance (AIC +2) so we omitted.
 fit_async <- function(dat, seas, host = "species + stage + season_yr", shared = FALSE) {
   fixed <- if (shared) paste0("pathogen * (", host, ") + ", seas)
-           else paste0("pathogen * (", host, " + ", seas, ")")
+  else paste0("pathogen * (", host, " + ", seas, ")")
   glmmTMB(as.formula(paste0("infected ~ ", fixed, " + (1 | site) + (1 | survey_path)")),
           family = binomial, data = dat)
 }
@@ -257,8 +359,8 @@ summarise_peaks <- function(model, nsim = 10000, seed = 123) {
 async_peaks <- summarise_peaks(m_full)
 async_peaks
 
-# Bd peak 24 Feb (7 Feb-13 Mar); Rv peak 8 Feb (31 Dec - 19 Mar); lag -16 d (-58 to +27): timing NOT different
-# Amplitude: Bd 2.73 (2.02-3.50), Rv 0.987 (0.56-1.51); ratio 2.76 (1.63-5.04): cycles differ in STRENGTH!
+# Bd peak 24 Feb (7 Feb-13 Mar); Rv peak 8 Feb (31 Dec - 19 Mar); lag -16 d (-58 to +27): timing NOT different, kinda expected
+# Amplitude: Bd 2.73 (2.02-3.50), Rv 0.987 (0.56-1.51); ratio 2.76 (1.63-5.04): cycles differ in STRENGTH!! Very cool
 
 # Within-species lags, separating pathogen timing from seasonal host turnover
 # For ACGR and NOPE because they are most infected
